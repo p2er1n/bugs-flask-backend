@@ -1,4 +1,4 @@
-from .utils import WEIGHTS_ROOT, postprocess_obb
+from .utils import WEIGHTS_ROOT, postprocess_obb, CLASSES
 import onnxruntime as ort
 import numpy as np
 from ultralytics import YOLO
@@ -62,27 +62,32 @@ def yolo_ultralytics_postprocess(opt):
         return []
         
     detections = opt[0].obb  # Get the OBB object with all detections
-    for i in range(len(detections.xywhr)):
-        xywhr = detections.xywhr[i]
+    for i in range(len(detections.xyxyxyxy)):
+        xyxyxyxy = detections.xyxyxyxy[i]
         conf = detections.conf[i]
         cls_id = detections.cls[i]
-
-        x_center = float(xywhr[0])
-        y_center = float(xywhr[1])
-        height = float(xywhr[2])  # Based on original code's indexing
-        width = float(xywhr[3])
-        rotation = float(xywhr[4])
+        x1 = int(xyxyxyxy[0][0])
+        y1 = int(xyxyxyxy[0][1])
+        x2 = int(xyxyxyxy[1][0])
+        y2 = int(xyxyxyxy[1][1])
+        x3 = int(xyxyxyxy[2][0])
+        y3 = int(xyxyxyxy[2][1])
+        x4 = int(xyxyxyxy[3][0])
+        y4 = int(xyxyxyxy[3][1])
 
         results.append({
             "box": {
-                "x": x_center - width / 2,
-                "y": y_center - height / 2,
-                "width": width,
-                "height": height,
-                "rotation": rotation
+                "x1": x1,
+                "y1": y1,
+                "x2": x2,
+                "y2": y2,
+                "x3": x3,
+                "y3": y3,
+                "x4": x4,
+                "y4": y4,
             },
-            "confidence": float(conf),
-            "class": int(cls_id),
+            "confidence": "{:.2f}".format(conf),
+            "className": CLASSES[int(cls_id)],
         })
     return results
 
