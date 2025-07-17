@@ -6,7 +6,7 @@ import hashlib
 from datetime import datetime
 import json
 from models import db, Picture, DetectionHistory
-from utils import success, error
+from utils import success, error, download_file
 
 api_bp = Blueprint('api', __name__)
 
@@ -34,19 +34,20 @@ ROOT = os.path.dirname(os.path.abspath(__file__)) + "/../"
 #         "conf": o["conf"]
 #     } for o in output])
 
-# @api_bp.route('/detect', methods=['POST'])
-# def detect():
-#     req = request.get_json()
-#     image_url = req.get("image_url", None)
-#     task = req.get("task", "detect")
-#     engine = req.get("engine", "default")
-#     model = req.get("model", "default")
+# for testing
+@api_bp.route('/detect', methods=['POST'])
+def detect():
+    req = request.get_json()
+    image_url = req.get("image_url", None)
+    task = req.get("task", "detect")
+    engine = req.get("engine", "default")
+    model = req.get("model", "default")
 
-#     # image = download_file(image_url)
+    image = download_file(image_url)
 
-#     output = run_task(task, image, engine=engine, model=model)
+    output = run_task(task, image, engine=engine, model=model)
 
-#     return jsonify(output)
+    return jsonify(output)
     
 @api_bp.route('/identify', methods=['POST'])
 @jwt_required()
@@ -57,8 +58,8 @@ def upload_and_identify():
     if file.filename == '':
         return error("No selected file", 400)
     
-    task = request.form.get("task", "obb")
-    # task = request.form.get("task", "detect")
+    #task = request.form.get("task", "obb")
+    task = request.form.get("task", "detect")
     engine = request.form.get("engine", "default")
     model = request.form.get("model", "default")
 

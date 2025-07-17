@@ -122,6 +122,78 @@ def yolo_postprocess(opt, state):
     print(output)
     return output
 
+def rtdetr_preprocess(image):
+    np_image = np.frombuffer(image, dtype=np.uint8)
+    image = cv2.imdecode(np_image, cv2.IMREAD_COLOR) 
+    img_w, img_h = image.shape[1], image.shape[0]
+    img = cv2.resize(image, (640, 640))
+    img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
+    img = img.transpose(2, 0, 1)
+    img = img.reshape(1, 3, 640, 640)
+    img = img / 255.0
+    img = img.astype(np.float32)
+
+    return img, {
+        "img_w": img_w,
+        "img_h": img_h,
+    }
+
+def rtdetr_postprocess(output, state, confidence_threshold=0.3):
+    output = output.transpose()
+    # Get the bounding box and class scores
+    bboxes = output[:, :4]  # First 4 values: bounding box [cx, cy, width, height]
+    logits = output[:, 4:]
+
+    # Get the best class index and confidence score for each object
+    best_class_indices = np.argmax(logits, axis=-1)
+    best_class_confidences = np.max(logits, axis=-1)
+
+    # Filter detections based on the confidence threshold
+    high_confidence_indices = best_class_confidences > confidence_threshold
+    best_class_indices = best_class_indices[high_confidence_indices]
+    best_class_confidences = best_class_confidences[high_confidence_indices]
+    bboxes = bboxes[high_confidence_indices]
+
+    # Convert bounding boxes from [cx, cy, w, h] to [x_min, y_min, x_max, y_max]
+    cx, cy, w, h = bboxes[:, 0], bboxes[:, 1], bboxes[:, 2], bboxes[:, 3]
+    x_min = (cx - 0.5 * w)
+    y_min = (cy - 0.5 * h)
+    x_max = (cx + 0.5 * w)
+    y_max = (cy + 0.5 * h)
+
+    # Prepare the final list of detections using your desired format
+    detections = []
+    for i in range(len(best_class_indices)):
+        conf = "{:.2f}".format(float(best_class_confidences[i]))  # Format confidence as string with two decimals
+        cls_id = best_class_indices[i]
+    
+        detection = {
+            "box": {
+                "x": float(x_min[i]),
+                "y": float(y_min[i]),
+                "width": float(x_max[i] - x_min[i]),
+                "height": float(y_max[i] - y_min[i])
+            },
+            "className": str(CLASSES[cls_id]),  # Assuming CLASSES is a list of class names
+            "confidence": conf  # As string
+        }
+        detections.append(detection)
+    
+    print(detections)
+    return detections
+
+    # # Prepare the final list of detections
+    # detections = []
+    # for i in range(len(best_class_indices)):
+    #     detection = {
+    #         "class": int(best_class_indices[i]),
+    #         "confidence": float(best_class_confidences[i]),
+    #         "bbox": [float(x_min[i]), float(y_min[i]), float(x_max[i]), float(y_max[i])]
+    #     }
+    #     detections.append(detection)
+
+    # return detections
+
 
 def run_detect(image, engine, model):
     if engine == "default":
@@ -142,8 +214,8 @@ def run_detect(image, engine, model):
             ipt, state = yolo_ncnn_preprocess(image)
         else:
             ipt, state = yolo_preprocess(image)
-    elif False:
-        pass
+    elif model[:6] == "rtdetr":
+        ipt, state = rtdetr_preprocess(image)
 
     if engine == "onnxruntime":
         opt = run_ort_engine(ipt)
@@ -152,8 +224,8 @@ def run_detect(image, engine, model):
     
     if model[:4] == "yolo":
         opt = yolo_postprocess(opt, state)
-    elif False:
-        pass
+    elif model[:6] == "rtdetr":
+        opt = rtdetr_postprocess(opt, state)
 
     return opt
     
