@@ -1,6 +1,6 @@
 from flask import Blueprint, request, jsonify, current_app, Response
 from flask_jwt_extended import jwt_required, get_jwt_identity
-from ortEngine import run as ort_run
+from tasks import run_task
 import os
 import hashlib
 from datetime import datetime
@@ -34,7 +34,20 @@ ROOT = os.path.dirname(os.path.abspath(__file__)) + "/../"
 #         "conf": o["conf"]
 #     } for o in output])
 
+# @api_bp.route('/detect', methods=['POST'])
+# def detect():
+#     req = request.get_json()
+#     image_url = req.get("image_url", None)
+#     task = req.get("task", "detect")
+#     engine = req.get("engine", "default")
+#     model = req.get("model", "default")
 
+#     # image = download_file(image_url)
+
+#     output = run_task(task, image, engine=engine, model=model)
+
+#     return jsonify(output)
+    
 @api_bp.route('/identify', methods=['POST'])
 @jwt_required()
 def upload_and_identify():
@@ -43,6 +56,11 @@ def upload_and_identify():
     file = request.files['file']
     if file.filename == '':
         return error("No selected file", 400)
+    
+    task = request.form.get("task", "obb")
+    # task = request.form.get("task", "detect")
+    engine = request.form.get("engine", "default")
+    model = request.form.get("model", "default")
 
     try:
         os.makedirs(current_app.config['UPLOAD_FOLDER'], exist_ok=True)
@@ -70,26 +88,9 @@ def upload_and_identify():
             new_picture.save()
             picture = new_picture
 
-        model_path = os.path.join(ROOT, "weights/best-v5nu.onnx")
-        detections = ort_run(model_path, file_bytes)
-        detection_result = [{
-            # "box":{
-            #     "x": o["x1"],
-            #     "y": o["y1"],
-            # }
-            "box":{
-                "x": o["x1"],
-                "y": o["y1"],
-                "width": o["x2"] - o["x1"],
-                "height": o["y2"] - o["y1"]
-            },
-            # "p1": [o["x1"], o["y1"]],
-            # "p2": [o["x2"], o["y2"]],
-            "className": o["cls"],
-            "confidence": o["conf"]
-        } for o in detections]
-        detection_result_json = json.dumps(detection_result)
-
+        detections = run_task(task, file_bytes, engine=engine, model=model)
+        detection_result_json = json.dumps(detections)
+        print(detection_result_json)
         current_user_id = get_jwt_identity()
         history = DetectionHistory(
             user_id=current_user_id,
@@ -101,7 +102,7 @@ def upload_and_identify():
         db.session.commit()
         return success({
             "fileUrl": picture.url,
-            "detections": detection_result
+            "detections": detections
         })
 
     except Exception as e:
