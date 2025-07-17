@@ -90,7 +90,6 @@ def upload_and_identify():
 
         detections = run_task(task, file_bytes, engine=engine, model=model)
         detection_result_json = json.dumps(detections)
-        print(detection_result_json)
         current_user_id = get_jwt_identity()
         history = DetectionHistory(
             user_id=current_user_id,
@@ -102,6 +101,31 @@ def upload_and_identify():
         db.session.commit()
         return success({
             "fileUrl": picture.url,
+            "detections": detections
+        })
+
+    except Exception as e:
+        return error(f"An error occurred: {str(e)}", 500)
+
+
+@api_bp.route('/realtime_identify', methods=['POST'])
+@jwt_required()
+def realtime_identify():
+    if 'file' not in request.files:
+        return error("No file part", 400)
+    file = request.files['file']
+    if file.filename == '':
+        return error("No selected file", 400)
+    
+    task = request.form.get("task", "obb")
+    engine = request.form.get("engine", "default")
+    model = request.form.get("model", "default")
+
+    try:
+        file_bytes = file.read()
+        detections = run_task(task, file_bytes, engine=engine, model=model)
+        
+        return success({
             "detections": detections
         })
 
