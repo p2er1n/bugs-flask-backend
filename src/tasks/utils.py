@@ -1,5 +1,7 @@
-import cv2
 import numpy as np
+import os 
+
+WEIGHTS_ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))) + "/weights/"
 
 CLASSES = [
 "二星蝽",
@@ -37,6 +39,7 @@ CLASSES = [
 "黑蚱蝉"
     ]
 
+
 def filter_Detections(results, thresh = 0.5):
     # if model is trained on 1 class only
     if len(results[0]) == 5:
@@ -53,9 +56,14 @@ def filter_Detections(results, thresh = 0.5):
             class_id = detection[4:].argmax()
             confidence_score = detection[4:].max()
 
+            # if confidence_score >= thresh:
+            #     breakpoint()
+
             new_detection = np.append(detection[:4],[class_id,confidence_score])
 
             A.append(new_detection)
+
+        # breakpoint()
 
         A = np.array(A)
 
@@ -141,3 +149,29 @@ def rescale_back(results,img_w,img_h):
     keep, keep_confidences = NMS(boxes,confidence)
     # print(np.array(keep).shape)
     return keep, keep_confidences
+
+def postprocess_obb(output, orig_shape, conf_thresh=0.25):
+    predictions = output
+    
+    breakpoint()
+
+    # Filter by confidence
+    mask = predictions[:, 4] > conf_thresh
+    predictions = predictions[mask]
+    
+    if len(predictions) == 0:
+        return []
+    
+    # Get boxes [cx, cy, w, h, angle] and scores
+    boxes = np.concatenate([predictions[:, :4], predictions[:, 5:6]], axis=1)
+    scores = predictions[:, 4]
+    class_ids = predictions[:, 5].astype(np.int32)
+    
+    # Scale boxes to original image size
+    scale_x, scale_y = orig_shape[1] / 1024, orig_shape[0] / 1024
+    boxes[:, 0] *= scale_x  # cx
+    boxes[:, 1] *= scale_y  # cy
+    boxes[:, 2] *= scale_x  # w
+    boxes[:, 3] *= scale_y  # h
+    
+    return [ boxes, scores, class_ids ]
