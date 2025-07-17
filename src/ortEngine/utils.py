@@ -2,39 +2,39 @@ import cv2
 import numpy as np
 
 CLASSES = [
-    "011.exc_Adult",
-    "012.ybtn_Adult",
-    "013.gjxtn_Adult",
-    "014.bdgclc_Adult",
-    "028.sxdde_Adult",
-    "032.mtn_Adult",
-    "045.xlyc_Adult",
-    "053.bce_larva",
-    "054.sze_Adult",
-    "058.bylc_Adult",
-    "060.xmye_Adult",
-    "065.llyj_Adult",
-    "067.tzm_Adult",
-    "069.stn_Adult",
-    "071.hwcc_Adult",
-    "009.ewze_Adult",
-    "010.ewze_larva",
-    "075.ydfd_Adult",
-    "080.bxhjg_Adult",
-    "087.belc_Adult",
-    "089.djyc_Adult",
-    "096.hyde_Adult",
-    "099.hjtn_Adult",
-    "103.lce_Adult",
-    "104.lce_larva",
-    "105.mgbe_Adult",
-    "109.ccc_Adult",
-    "110.clj_Adult",
-    "111.cfd_Adult",
-    "116.lg_Adult",
-    "123.ctc_Adult",
-    "132.mpc_Adult",
-    "140.hzc_Adult"
+"二星蝽",
+"云斑天牛",
+"光肩星天牛",
+"八点广翅蜡蝉",
+"双线盗毒蛾",
+"墨天牛",
+"小绿叶蝉",
+"扁刺蛾",
+"扇舟蛾",
+"斑衣蜡蝉",
+"旋目夜蛾",
+"柳蓝叶甲",
+"桃蛀螟",
+"桑天牛",
+"长蝽",
+"二尾舟蛾",
+"二尾舟蛾(幼虫)",
+"玉带凤蝶",
+"白星花金龟",
+"碧蛾蜡蝉",
+"稻棘缘蝽",
+"红缘灯蛾",
+"红颈天牛",
+"绿刺蛾",
+"绿刺蛾",
+"美国白蛾",
+"茶翅蝽",
+"草履蚧",
+"菜粉蝶",
+"蝼蛄",
+"赤条蝽",
+"麻皮蝽",
+"黑蚱蝉"
     ]
 
 def filter_Detections(results, thresh = 0.5):
@@ -125,6 +125,8 @@ def NMS(boxes, conf_scores, iou_thresh = 0.55):
 
 # function to rescale bounding boxes 
 def rescale_back(results,img_w,img_h):
+    if len(results) == 0:
+        return np.array([]), np.array([])
     cx, cy, w, h, class_id, confidence = results[:,0], results[:,1], results[:,2], results[:,3], results[:,4], results[:,-1]
     cx = cx/640.0 * img_w
     cy = cy/640.0 * img_h

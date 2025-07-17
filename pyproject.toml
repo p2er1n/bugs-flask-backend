@@ -4,6 +4,7 @@ version = "0.1.0"
 description = "害虫目标检测系统"
 requires-python = ">=3.13"
 dependencies = [
+    "alibabacloud-oss-v2>=1.1.2",
     "flask>=3.1.1",
     "flask-jwt-extended>=4.7.1",
     "flask-sqlalchemy>=3.1.1",
@@ -11,4 +12,6 @@ dependencies = [
     "opencv-python>=4.12.0.88",
     "python-dotenv>=1.1.1",
     "requests>=2.32.4",
+    "openai>=1.35.13",
+    "flask-socketio>=5.5.1",
 ]
