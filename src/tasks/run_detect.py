@@ -99,6 +99,8 @@ def yolo_postprocess(opt, state):
     img_w = state["img_w"]
     img_h = state["img_h"]
 
+    print(opt)
+
     results = filter_Detections(opt)
     rescaled_results, confidences = rescale_back(results, img_w, img_h)
 
@@ -108,7 +110,16 @@ def yolo_postprocess(opt, state):
         cls_id = int(cls_id)
         x1, y1, x2, y2 = int(x1), int(y1), int(x2), int(y2)
         conf = "{:.2f}".format(conf)
-        output.append({'x1': x1, 'y1':y1, 'x2':x2, 'y2':y2,"cls": CLASSES[cls_id],"conf": conf})
+        output.append({ "box":{
+                "x": x1,
+                "y": y1,
+                "width": x2-x1,
+                "height": y2 - y1            
+                },
+            "className": CLASSES[cls_id],
+            "confidence": conf
+        })
+    print(output)
     return output
 
 

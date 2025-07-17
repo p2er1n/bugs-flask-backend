@@ -56,19 +56,35 @@ def yolo_ultralytics_preprocess(image):
     return image
 
 def yolo_ultralytics_postprocess(opt):
-    return [
-        {
+    results = []
+    # opt is a list of Results objects, we process the first one for the single image.
+    if not opt:
+        return []
+        
+    detections = opt[0].obb  # Get the OBB object with all detections
+    for i in range(len(detections.xywhr)):
+        xywhr = detections.xywhr[i]
+        conf = detections.conf[i]
+        cls_id = detections.cls[i]
+
+        x_center = float(xywhr[0])
+        y_center = float(xywhr[1])
+        height = float(xywhr[2])  # Based on original code's indexing
+        width = float(xywhr[3])
+        rotation = float(xywhr[4])
+
+        results.append({
             "box": {
-                "x": float(o.obb.xywhr[0][0]),
-                "y": float(o.obb.xywhr[0][1]),
-                "width": float(o.obb.xywhr[0][2]),
-                "height": float(o.obb.xywhr[0][3]),
-                "rotation": float(o.obb.xywhr[0][4])
+                "x": x_center - width / 2,
+                "y": y_center - height / 2,
+                "width": width,
+                "height": height,
+                "rotation": rotation
             },
-            "confidence": float(o.obb.conf),
-            "class": int(o.obb.cls),
-        }   for o in opt  
-    ]
+            "confidence": float(conf),
+            "class": int(cls_id),
+        })
+    return results
 
 def run_obb(image, engine, model):
     if engine == "default":
