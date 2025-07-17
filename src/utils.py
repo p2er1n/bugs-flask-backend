@@ -7,3 +7,4 @@ def download_file(url):
         return binary_data
     else:
         raise ValueError("下载文件失败：",response.status_code)
+    
